@@ -23,12 +23,13 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"os"
 	"time"
 
-	"cloud.google.com/go/profiler"
 	"google.golang.org/grpc"
 
 	"github.com/GoogleCloudPlatform/golang-samples/profiler/shakesapp/shakesapp"
+	"github.com/pyroscope-io/client/pyroscope"
 )
 
 var (
@@ -47,18 +48,53 @@ var (
 func main() {
 	flag.Parse()
 
-	if err := profiler.Start(profiler.Config{
-		Service:              "shakesapp",
-		ServiceVersion:       *version,
-		ProjectID:            *projectID,
-		NoHeapProfiling:      !*enableHeap,
-		NoAllocProfiling:     !*enableHeapAlloc,
-		NoGoroutineProfiling: !*enableThread,
-		MutexProfiling:       *enableContention,
-		DebugLogging:         true,
-	}); err != nil {
-		log.Fatalf("Failed to start profiler: %v", err)
-	}
+	// if err := profiler.Start(profiler.Config{
+	// 	Service:              "shakesapp",
+	// 	ServiceVersion:       *version,
+	// 	ProjectID:            *projectID,
+	// 	NoHeapProfiling:      !*enableHeap,
+	// 	NoAllocProfiling:     !*enableHeapAlloc,
+	// 	NoGoroutineProfiling: !*enableThread,
+	// 	MutexProfiling:       *enableContention,
+	// 	DebugLogging:         true,
+	// }); err != nil {
+	// 	log.Fatalf("Failed to start profiler: %v", err)
+	// }
+
+	pyroscope.Start(pyroscope.Config{
+		ApplicationName: "shakesapp",
+
+		// Static IP of pyroscope VM
+		ServerAddress: "http://10.128.0.2:4040",
+
+		// you can disable logging by setting this to nil
+		Logger: pyroscope.StandardLogger,
+
+		// optionally, if authentication is enabled, specify the API key:
+		// AuthToken:    os.Getenv("PYROSCOPE_AUTH_TOKEN"),
+
+		// you can provide static tags via a map:
+		Tags: map[string]string{
+			"hostname": os.Getenv("HOSTNAME"),
+			"version":  *version,
+		},
+
+		ProfileTypes: []pyroscope.ProfileType{
+			// these profile types are enabled by default:
+			pyroscope.ProfileCPU,
+			pyroscope.ProfileAllocObjects,
+			pyroscope.ProfileAllocSpace,
+			pyroscope.ProfileInuseObjects,
+			pyroscope.ProfileInuseSpace,
+
+			// these profile types are optional:
+			// pyroscope.ProfileGoroutines,
+			// pyroscope.ProfileMutexCount,
+			// pyroscope.ProfileMutexDuration,
+			// pyroscope.ProfileBlockCount,
+			// pyroscope.ProfileBlockDuration,
+		},
+	})
 
 	server := grpc.NewServer()
 	shakesapp.RegisterShakespeareServiceServer(server, shakesapp.NewServer())
