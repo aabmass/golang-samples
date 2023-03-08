@@ -59,10 +59,17 @@ func (s *server) GetMatchCount(ctx context.Context, req *ShakespeareRequest) (*S
 	return resp, nil
 }
 
+var files []string
+
 // readFiles reads the content of files within the specified bucket with the
 // specified prefix path in parallel and returns their content. It fails if
 // operations to find or read any of the files fails.
 func readFiles(ctx context.Context, bucketName, prefix string) ([]string, error) {
+	// return if defined
+	if files != nil {
+		return files, nil
+	}
+
 	type resp struct {
 		s   string
 		err error
@@ -104,13 +111,15 @@ func readFiles(ctx context.Context, bucketName, prefix string) ([]string, error)
 			resps <- resp{string(data), err}
 		}(path)
 	}
-	ret := make([]string, len(paths))
+
+	// Save the result in the variable files
+	files = make([]string, len(paths))
 	for i := 0; i < len(paths); i++ {
 		r := <-resps
 		if r.err != nil {
-			err = r.err
+			return nil, r.err
 		}
-		ret[i] = r.s
+		files[i] = r.s
 	}
-	return ret, err
+	return files, nil
 }
