@@ -88,11 +88,11 @@ func main() {
 			pyroscope.ProfileInuseSpace,
 
 			// these profile types are optional:
-			// pyroscope.ProfileGoroutines,
-			// pyroscope.ProfileMutexCount,
-			// pyroscope.ProfileMutexDuration,
-			// pyroscope.ProfileBlockCount,
-			// pyroscope.ProfileBlockDuration,
+			pyroscope.ProfileGoroutines,
+			pyroscope.ProfileMutexCount,
+			pyroscope.ProfileMutexDuration,
+			pyroscope.ProfileBlockCount,
+			pyroscope.ProfileBlockDuration,
 		},
 	})
 
